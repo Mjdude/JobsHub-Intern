@@ -26,28 +26,26 @@ interface JobCardProps {
 
 const JobCard = ({ job, onApply, isSaved = false }: JobCardProps) => {
   return (
-    <Card className="job-card relative overflow-hidden">
-      {isSaved ? (
-        <div className="absolute top-3 right-3">
-          <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+    <Card className="job-card relative overflow-hidden hover:shadow-md transition-shadow">
+      <div className="absolute top-3 right-3 flex gap-2">
+        {isSaved ? (
+          <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-xs sm:text-sm">
             Saved
           </Badge>
-        </div>
-      ) : job.urgent ? (
-        <div className="absolute top-3 right-3">
-          <Badge variant="destructive" className="pulse-golden">
+        ) : job.urgent ? (
+          <Badge variant="destructive" className="pulse-golden text-xs sm:text-sm">
             Urgent
           </Badge>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1 flex-1">
-            <h3 className="font-semibold text-lg text-foreground leading-tight">
+      <CardHeader className="pb-3 px-4 sm:px-6">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+          <div className="space-y-1 flex-1 min-w-0">
+            <h3 className="font-semibold text-base sm:text-lg text-foreground leading-tight line-clamp-2">
               {job.title}
             </h3>
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-1.5 text-muted-foreground text-sm sm:text-base">
               <Building2 className="w-4 h-4" />
               <span className="font-medium">{job.company}</span>
             </div>
@@ -56,8 +54,15 @@ const JobCard = ({ job, onApply, isSaved = false }: JobCardProps) => {
         
         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
-            <MapPin className="w-4 h-4" />
-            <span>{job.location}</span>
+            <div className="flex items-center gap-1">
+              <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="truncate max-w-[120px] sm:max-w-[200px]">{job.company}</span>
+            </div>
+            <span className="text-muted-foreground/50 hidden sm:inline">•</span>
+            <div className="flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="truncate max-w-[100px] sm:max-w-[150px]">{job.location}</span>
+            </div>
           </div>
           <div className="flex items-center gap-1">
             <DollarSign className="w-4 h-4" />

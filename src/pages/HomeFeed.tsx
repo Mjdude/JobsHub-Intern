@@ -6,7 +6,7 @@ import SearchFilters, { SearchFiltersRef } from "@/components/SearchFilters";
 import { mockJobs, getFilteredJobs, type Job } from "@/data/mockJobs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, TrendingUp, Star, Search, Home } from "lucide-react";
+import { RefreshCw, TrendingUp, Star, Search, Home, AlertTriangle, Bookmark, Briefcase } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import BrandCarousel from "@/components/BrandCarousel";
 
@@ -21,10 +21,24 @@ const HomeFeed = () => {
   const [jobs, setJobs] = useState<Job[]>(mockJobs);
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'all' | 'saved'>('all');
   const { toast } = useToast();
   const searchFiltersRef = useRef<SearchFiltersRef>(null);
+  const navigate = useNavigate();
 
+  // Filter jobs based on search and filters
   const filteredJobs = getFilteredJobs(jobs, searchQuery, filters);
+  
+  // Filter for saved jobs
+  const savedJobsList = filteredJobs.filter(job => savedJobs.has(job.id));
+  
+  // Determine which jobs to show based on active tab
+  const showSavedJobs = activeTab === 'saved';
+  const displayJobs = showSavedJobs ? savedJobsList : filteredJobs;
+  
+  // Separate into urgent and regular jobs from the display jobs
+  const urgentJobs = displayJobs.filter(job => job.urgent);
+  const regularJobs = displayJobs.filter(job => !job.urgent);
 
   const handleFilterChange = (filterType: string, value: string) => {
     setFilters(prev => ({
@@ -84,55 +98,50 @@ const HomeFeed = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const urgentJobs = filteredJobs.filter(job => job.urgent);
-  const regularJobs = filteredJobs.filter(job => !job.urgent);
-
-  const navigate = useNavigate();
-
   return (
-    <div className="min-h-screen bg-gradient-subtle pb-20">
+    <div className="min-h-screen bg-gradient-subtle pb-24 sm:pb-20">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border">
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
+        <div className="p-3 sm:p-4">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="flex items-center gap-1 sm:gap-2 overflow-hidden">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate('/')}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground h-9 w-9"
               >
-                <Home className="w-5 h-5" />
+                <Home className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
               <h1 
-                className="text-2xl font-bold text-foreground cursor-pointer hover:text-primary transition-colors"
+                className="text-xl sm:text-2xl font-bold text-foreground cursor-pointer hover:text-primary transition-colors whitespace-nowrap"
                 onClick={() => navigate('/')}
               >
                 JobsHub
               </h1>
-              <p className="text-muted-foreground text-sm">
-                {filteredJobs.length} opportunities found
+              <p className="text-muted-foreground text-xs sm:text-sm whitespace-nowrap ml-1 sm:ml-2">
+                {filteredJobs.length} {window.innerWidth < 640 ? '' : 'opportunities found'}
               </p>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => searchFiltersRef.current?.focusSearch()}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground h-9 w-9"
               >
-                <Search className="w-5 h-5" />
+                <Search className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="gap-2"
+                className="h-9 px-2 sm:px-3 gap-1 sm:gap-2 text-xs sm:text-sm"
               >
-                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Refresh
+                <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Refresh</span>
               </Button>
             </div>
           </div>
@@ -169,70 +178,119 @@ const HomeFeed = () => {
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-6">
-        {/* Urgent Jobs Section */}
-        {urgentJobs.length > 0 && (
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        {/* Tabs */}
+        <div className="flex border-b mb-6">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-4 py-2 font-medium text-sm flex items-center gap-2 ${
+              activeTab === 'all' 
+                ? 'text-primary border-b-2 border-primary' 
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Briefcase className="w-4 h-4" />
+            All Jobs
+            <Badge variant="secondary" className="ml-1">
+              {filteredJobs.length}
+            </Badge>
+          </button>
+          <button
+            onClick={() => setActiveTab('saved')}
+            className={`px-4 py-2 font-medium text-sm flex items-center gap-2 ${
+              activeTab === 'saved'
+                ? 'text-primary border-b-2 border-primary' 
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Bookmark className="w-4 h-4" />
+            Saved Jobs
+            <Badge variant="secondary" className="ml-1">
+              {savedJobsList.length}
+            </Badge>
+          </button>
+        </div>
+
+        {/* No Saved Jobs Message */}
+        {activeTab === 'saved' && savedJobsList.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            className="text-center py-12"
           >
-            <div className="flex items-center gap-2 mb-4">
-              <Badge variant="destructive" className="pulse-golden">
-                Urgent
-              </Badge>
-              <h2 className="text-lg font-semibold text-foreground">
-                Apply Soon - Limited Time
-              </h2>
+            <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center mb-4">
+              <Bookmark className="w-8 h-8 text-muted-foreground" />
             </div>
-            <div className="space-y-4">
-              {urgentJobs.map((job, index) => (
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              No saved jobs yet
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              Save jobs you're interested in to find them here later
+            </p>
+            <Button onClick={() => setActiveTab('all')} variant="outline">
+              Browse all jobs
+            </Button>
+          </motion.div>
+        )}
+
+        {/* Urgent Jobs Section */}
+        {urgentJobs.length > 0 && (
+          <section className="mb-6 sm:mb-8">
+            <div className="flex items-center gap-2 mb-3 sm:mb-4">
+              <div className="p-1 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+                <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-600 dark:text-yellow-400" />
+              </div>
+              <h2 className="font-semibold text-base sm:text-lg">Urgent Hiring</h2>
+              <Badge variant="outline" className="ml-1 sm:ml-2 text-xs sm:text-sm">{urgentJobs.length} positions</Badge>
+            </div>
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {urgentJobs.map((job) => (
                 <motion.div
                   key={job.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  transition={{ duration: 0.5 }}
                 >
                   <JobCard
                     onApply={handleApply}
-                    key={job.id}
                     job={job}
                     isSaved={savedJobs.has(job.id)}
                   />
                 </motion.div>
               ))}
             </div>
-          </motion.div>
+          </section>
         )}
 
         {/* Regular Jobs Section */}
         {regularJobs.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: urgentJobs.length * 0.1 }}
-          >
-            <h2 className="text-lg font-semibold text-foreground mb-4">
-              Recommended for You
-            </h2>
-            <div className="space-y-4">
-              {regularJobs.map((job, index) => (
-                <motion.div
-                  key={job.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: (urgentJobs.length + index) * 0.1 }}
-                >
-                  <JobCard
-                    onApply={handleApply}
+          <section className="mt-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: urgentJobs.length * 0.1 }}
+            >
+              <h2 className="text-lg font-semibold text-foreground mb-4">
+                Recommended for You
+              </h2>
+              <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {regularJobs.map((job, index) => (
+                  <motion.div
                     key={job.id}
-                    job={job}
-                    isSaved={savedJobs.has(job.id)}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, delay: (urgentJobs.length + index) * 0.1 }}
+                  >
+                    <JobCard
+                      onApply={handleApply}
+                      job={job}
+                      isSaved={savedJobs.has(job.id)}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </section>
         )}
 
         {/* No Results */}
@@ -257,7 +315,7 @@ const HomeFeed = () => {
             </Button>
           </motion.div>
         )}
-      </div>
+      </main>
     </div>
   );
 };
